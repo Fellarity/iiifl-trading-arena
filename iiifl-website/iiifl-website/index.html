@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iiifl - Stock Broking</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== ANNOUNCEMENT BAR ===== -->
+<div class="announce">
+  <div class="container wrap">
+    <p>⚡ Open your Demat in minutes • Transparent pricing • Premium trading UI</p>
+    <a href="open-account.html">Open Account →</a>
+  </div>
+</div>
+
+<!-- ===== NAVBAR ===== -->
+<header class="nav">
+  <div class="container nav-wrap">
+    <div class="logo">iiifl</div>
+
+    <nav class="menu" id="menu">
+      <a class="navlink active" href="index.html">Home</a>
+
+      <div class="dropdown">
+        <a class="navlink dropbtn" href="products.html">
+          Products <span class="chev">▾</span>
+        </a>
+        <div class="mega">
+          <div class="mega-grid">
+            <a href="products.html">
+              <b>Trading Platform</b>
+              <span>Web trading, charts & orders</span>
+            </a>
+            <a href="products.html">
+              <b>Mobile App</b>
+              <span>Trade anywhere, anytime</span>
+            </a>
+            <a href="products.html">
+              <b>Investments</b>
+              <span>IPO & Mutual Funds</span>
+            </a>
+            <a href="products.html">
+              <b>Pro Tools</b>
+              <span>Indicators & analytics</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <a class="navlink" href="pricing.html">Pricing</a>
+      <a class="navlink" href="partner.html">Partner</a>
+      <a class="navlink" href="about.html">About</a>
+      <a class="navlink" href="contact.html">Contact</a>
+      <a class="navlink" href="login.html">Login</a>
+    </nav>
+
+    <div class="actions">
+      <a class="btn ghost" href="payments.html">Pay Now</a>
+      <a class="btn primary" href="open-account.html">Open Account</a>
+      <button class="hamburger" id="hamburger">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== HERO SECTION ===== -->
+<section class="hero">
+  <div class="container hero-grid">
+
+    <div>
+      <div class="tag">
+        <span class="dot"></span> FYERS-style professional trading experience
+      </div>
+
+      <h1>
+        Trade. Invest. Grow.<br>
+        with <span style="color:var(--brand)">iiifl</span>
+      </h1>
+
+      <p>
+        A modern stock broking platform for Equity, F&O, IPO & Mutual Funds.
+        Simple pricing, fast onboarding and premium UI.
+      </p>
+
+      <div class="hero-cta">
+        <a class="btn primary" href="open-account.html">Open Demat Account</a>
+        <a class="btn ghost" href="pricing.html">View Pricing</a>
+      </div>
+
+      <div class="kpi">
+        <div class="mini">
+          <b>₹0</b>
+          <span>Delivery brokerage</span>
+        </div>
+        <div class="mini">
+          <b>₹20</b>
+          <span>Intraday & F&O</span>
+        </div>
+        <div class="mini">
+          <b>Fast</b>
+          <span>KYC onboarding</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALLBACK FORM -->
+    <div class="panel">
+      <h3>Request Callback</h3>
+      <small>Our team will contact you shortly</small>
+
+      <form class="form" id="leadForm">
+        <input type="text" placeholder="Full Name" required>
+        <input type="text" placeholder="Mobile Number" required>
+        <input type="text" placeholder="City" required>
+        <button class="btn primary full" type="submit">
+          Get Callback
+        </button>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="section reveal">
+  <div class="container">
+    <h2>Why choose iiifl?</h2>
+    <p class="sub">Built for traders and long-term investors.</p>
+
+    <div class="grid3">
+      <div class="card">
+        <div class="badge">Low Cost</div>
+        <h3>Transparent Pricing</h3>
+        <p>No hidden charges. Flat brokerage like FYERS.</p>
+      </div>
+
+      <div class="card">
+        <div class="badge">Tools</div>
+        <h3>Advanced Platform</h3>
+        <p>Charts, watchlists, portfolio & fast execution.</p>
+      </div>
+
+      <div class="card">
+        <div class="badge">Support</div>
+        <h3>Dedicated Help</h3>
+        <p>Onboarding and customer support via WhatsApp.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta reveal">
+  <div class="container cta-wrap">
+    <div>
+      <h2>Start trading today</h2>
+      <p class="sub">Open your account and access markets instantly.</p>
+    </div>
+    <a class="btn primary" href="open-account.html">Open Account</a>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="logo">iiifl</div>
+      <p class="sub">Modern stock broking firm in India.</p>
+    </div>
+
+    <div>
+      <h3>Company</h3>
+      <a href="about.html">About</a>
+      <a href="products.html">Products</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="partner.html">Partner</a>
+    </div>
+
+    <div>
+      <h3>Support</h3>
+      <a href="contact.html">Contact</a>
+      <a href="payments.html">Payments</a>
+      <a href="login.html">Client Login</a>
+    </div>
+  </div>
+
+  <div class="container disclaimer">
+    <p>
+      <b>Risk Disclaimer:</b>
+      Investments in securities market are subject to market risks.
+      Read all related documents carefully before investing.
+    </p>
+    <p>© <span id="year"></span> iiifl. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- FLOATING BUTTONS -->
+<a class="float-pay" href="payments.html">Pay</a>
+<a class="whatsapp" target="_blank"
+   href="https://wa.me/919516998328">
+   WhatsApp Support
+</a>
+
+<!-- JS -->
+<script src="app.js"></script>
+</body>
+</html>
+

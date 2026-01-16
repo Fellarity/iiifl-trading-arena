@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>iiifl - Client Login</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-wrap">
+    <div class="logo">iiifl</div>
+    <nav class="menu" id="menu">
+      <a class="navlink" href="index.html">Home</a>
+      <a class="navlink" href="products.html">Products</a>
+      <a class="navlink" href="pricing.html">Pricing</a>
+      <a class="navlink" href="partner.html">Partner</a>
+      <a class="navlink" href="contact.html">Contact</a>
+      <a class="navlink active" href="login.html">Login</a>
+    </nav>
+    <div class="actions">
+      <a class="btn ghost" href="payments.html">Pay Now</a>
+      <button class="hamburger" id="hamburger">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container reveal">
+    <h2>Client Login</h2>
+    <p class="sub">Login to your trading dashboard (demo UI).</p>
+
+    <div class="panel" style="max-width:520px;margin-top:18px">
+      <h3>Login</h3>
+      <form class="form" id="loginForm">
+        <input required placeholder="Client ID / Email"/>
+        <input required type="password" placeholder="Password"/>
+        <button class="btn primary full" type="submit">Login</button>
+      </form>
+      <small>Note: This is a frontend demo page. Backend integration can be added later.</small>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container disclaimer">
+    <p><b>Risk Disclaimer:</b> Investments in securities market are subject to market risks.</p>
+    <p>© <span id="year"></span> iiifl. All rights reserved.</p>
+  </div>
+</footer>
+
+<a class="whatsapp" target="_blank" href="https://wa.me/919516998328">WhatsApp Support</a>
+<script src="app.js"></script>
+</body>
+</html>

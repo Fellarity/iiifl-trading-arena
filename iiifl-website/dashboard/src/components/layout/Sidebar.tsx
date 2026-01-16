@@ -13,11 +13,11 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 px-4 space-y-2">
-        <NavItem to="/" icon={<Home size={20} />} label="Dashboard" />
-        <NavItem to="/portfolio" icon={<PieChart size={20} />} label="Portfolio" />
-        <NavItem to="/market" icon={<BarChart3 size={20} />} label="Market" />
-        <NavItem to="/funds" icon={<Wallet size={20} />} label="Funds" />
-        <NavItem to="/settings" icon={<Settings size={20} />} label="Settings" />
+        <NavItem to="/dashboard" icon={<Home size={20} />} label="Dashboard" />
+        <NavItem to="/dashboard/portfolio" icon={<PieChart size={20} />} label="Portfolio" />
+        <NavItem to="/dashboard/market" icon={<BarChart3 size={20} />} label="Market" />
+        <NavItem to="/dashboard/funds" icon={<Wallet size={20} />} label="Funds" />
+        <NavItem to="/dashboard/settings" icon={<Settings size={20} />} label="Settings" />
       </nav>
 
       <div className="p-4 border-t">

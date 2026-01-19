@@ -1,9 +1,12 @@
 import { useNavigate, Outlet } from "react-router-dom";
 import { Button } from "../ui/button";
 import { ModeToggle } from "../ui/mode-toggle";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 
 const LandingLayout = () => {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col">
@@ -14,18 +17,42 @@ const LandingLayout = () => {
             iiifl
           </div>
           
+          {/* Desktop Nav */}
           <div className="hidden md:flex gap-8 text-sm font-medium text-muted-foreground">
             <button onClick={() => navigate("/products")} className="hover:text-foreground transition-colors">Products</button>
             <button onClick={() => navigate("/pricing")} className="hover:text-foreground transition-colors">Pricing</button>
             <button onClick={() => navigate("/learn")} className="hover:text-foreground transition-colors">Learn</button>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             <ModeToggle />
             <Button variant="ghost" onClick={() => navigate("/login")}>Log in</Button>
             <Button onClick={() => navigate("/login")}>Open Account</Button>
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <div className="md:hidden flex items-center gap-2">
+             <ModeToggle />
+             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2">
+                 {isMenuOpen ? <X /> : <Menu />}
+             </button>
+          </div>
         </div>
+
+        {/* Mobile Nav Content */}
+        {isMenuOpen && (
+            <div className="md:hidden border-t border-border bg-background p-4 space-y-4 shadow-lg animate-in slide-in-from-top-5 duration-200">
+                <div className="flex flex-col gap-4 text-sm font-medium">
+                    <button onClick={() => { navigate("/products"); setIsMenuOpen(false); }} className="text-left py-2 hover:text-primary">Products</button>
+                    <button onClick={() => { navigate("/pricing"); setIsMenuOpen(false); }} className="text-left py-2 hover:text-primary">Pricing</button>
+                    <button onClick={() => { navigate("/learn"); setIsMenuOpen(false); }} className="text-left py-2 hover:text-primary">Learn</button>
+                </div>
+                <div className="grid gap-2 pt-4 border-t border-border">
+                    <Button variant="outline" onClick={() => navigate("/login")} className="w-full">Log in</Button>
+                    <Button onClick={() => navigate("/register")} className="w-full">Open Account</Button>
+                </div>
+            </div>
+        )}
       </nav>
 
       {/* Content */}

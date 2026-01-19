@@ -8,19 +8,19 @@ const Landing = () => {
   return (
     <>
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
+      <section className="pt-24 md:pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
         <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20 mb-6">
           New: Algo Trading API
         </div>
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-foreground to-foreground/50 bg-clip-text text-transparent">
+        <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-foreground to-foreground/50 bg-clip-text text-transparent">
           Investing made <br /> simple & powerful.
         </h1>
-        <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+        <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
           Commission-free investing, plus the tools you need to put your money in motion. 
           Real-time charts, advanced analysis, and instant execution.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="text-lg px-8 h-12" onClick={() => navigate("/login")}>
+          <Button size="lg" className="text-lg px-8 h-12" onClick={() => navigate("/register")}>
             Start Trading <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button size="lg" variant="outline" className="text-lg px-8 h-12">

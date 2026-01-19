@@ -15,9 +15,12 @@ const tradeSchema = Joi.object({
 });
 
 router.get('/', portfolioController.getPortfolio);
+router.get('/positions', portfolioController.getPositions);
 router.get('/transactions', portfolioController.getTransactions);
 router.get('/performance', portfolioController.getPerformance);
 router.post('/buy', validate(tradeSchema), portfolioController.buyAsset);
 router.post('/sell', validate(tradeSchema), portfolioController.sellAsset);
+router.post('/deposit', portfolioController.deposit);
+router.post('/withdraw', portfolioController.withdraw);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import { Home, PieChart, BarChart3, Wallet, Settings, LogOut } from 'lucide-react';
+import { Home, PieChart, BarChart3, Wallet, Settings, LogOut, List } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NavLink } from 'react-router-dom';
 
@@ -13,7 +13,8 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 px-4 space-y-2">
-        <NavItem to="/dashboard" icon={<Home size={20} />} label="Dashboard" />
+        <NavItem to="/dashboard" icon={<Home size={20} />} label="Dashboard" end />
+        <NavItem to="/dashboard/orders" icon={<List size={20} />} label="Orders" />
         <NavItem to="/dashboard/portfolio" icon={<PieChart size={20} />} label="Portfolio" />
         <NavItem to="/dashboard/market" icon={<BarChart3 size={20} />} label="Market" />
         <NavItem to="/dashboard/funds" icon={<Wallet size={20} />} label="Funds" />
@@ -33,9 +34,10 @@ const Sidebar = () => {
   );
 };
 
-const NavItem = ({ icon, label, to }: { icon: any, label: string, to: string }) => (
+const NavItem = ({ icon, label, to, end }: { icon: any, label: string, to: string, end?: boolean }) => (
   <NavLink
     to={to}
+    end={end}
     className={({ isActive }) => `flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-md transition-all ${
       isActive 
         ? "bg-primary/10 text-primary" 

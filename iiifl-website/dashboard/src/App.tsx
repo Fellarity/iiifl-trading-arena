@@ -7,26 +7,33 @@ import AssetAllocation from "./components/dashboard/AssetAllocation";
 import PerformanceChart from "./components/dashboard/PerformanceChart";
 import PortfolioSummary from "./components/dashboard/PortfolioSummary";
 import RecentTransactions from "./components/dashboard/RecentTransactions";
+import Positions from "./components/dashboard/Positions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Landing from "./pages/Landing";
 import Products from "./pages/landing/Products";
 import Pricing from "./pages/landing/Pricing";
 import Learn from "./pages/landing/Learn";
 import Portfolio from "./pages/Portfolio";
 import Market from "./pages/Market";
+import Funds from "./pages/Funds";
+import Settings from "./pages/Settings";
+import Orders from "./pages/Orders";
+import StockDetail from "./pages/StockDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import { FundsPage, SettingsPage } from "./pages/PlaceholderPages";
+import { FundsPage } from "./pages/PlaceholderPages"; // SettingsPage removed
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
 // 1. Main Layout for User Dashboard
 const DashboardLayout = () => {
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
+    <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300 overflow-x-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
         <Header />
-        <main className="p-6 md:p-8 space-y-8">
+        <main className="p-4 md:p-8 space-y-6 md:space-y-8 flex-1 overflow-y-auto">
            <Outlet />
         </main>
       </div>
@@ -44,14 +51,26 @@ const DashboardHome = () => {
           <p className="text-muted-foreground">Overview of your investments and performance.</p>
         </div>
       </div>
-      <PortfolioSummary />
-      <div className="grid gap-4 md:grid-cols-7">
-        <PerformanceChart />
-        <AssetAllocation />
-      </div>
-      <div className="grid gap-4 md:grid-cols-7">
-        <RecentTransactions />
-      </div>
+      
+      <Tabs defaultValue="holdings" className="w-full">
+        <TabsList>
+          <TabsTrigger value="holdings">Holdings</TabsTrigger>
+          <TabsTrigger value="positions">Day Positions</TabsTrigger>
+        </TabsList>
+        <TabsContent value="holdings" className="space-y-4">
+            <PortfolioSummary />
+            <div className="grid gap-4 md:grid-cols-7">
+                <PerformanceChart />
+                <AssetAllocation />
+            </div>
+            <div className="grid gap-4 md:grid-cols-7">
+                <RecentTransactions />
+            </div>
+        </TabsContent>
+        <TabsContent value="positions">
+            <Positions />
+        </TabsContent>
+      </Tabs>
     </>
   );
 };
@@ -98,6 +117,7 @@ const AppRouter = () => {
       </Route>
 
       <Route path="/login" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Login />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Register />} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
@@ -108,10 +128,12 @@ const AppRouter = () => {
       {/* User Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardHome />} />
+        <Route path="orders" element={<Orders />} />
         <Route path="portfolio" element={<Portfolio />} />
         <Route path="market" element={<Market />} />
-        <Route path="funds" element={<FundsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="stock/:symbol" element={<StockDetail />} />
+        <Route path="funds" element={<Funds />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

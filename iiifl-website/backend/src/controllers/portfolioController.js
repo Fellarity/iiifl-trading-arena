@@ -1,18 +1,22 @@
 const db = require('../config/db');
 const AppError = require('../utils/appError');
+const { createNotification } = require('./notificationController');
 const yahooFinanceModule = require('yahoo-finance2');
 
-// Fallback: Use default export, or the module itself, or instantiate if needed
-let yahooFinance = yahooFinanceModule.default || yahooFinanceModule;
-
-// Fix for "Call const yahooFinance = new YahooFinance() first" error
-if (typeof yahooFinance === 'function' || (yahooFinance.prototype && yahooFinance.prototype.quote)) {
-    try {
-        yahooFinance = new yahooFinance();
-    } catch (e) {
-        // If it fails (e.g. it wasn't a constructor), keep original
+// Helper to get a working Yahoo Finance instance
+const getYahooInstance = () => {
+    const YF = yahooFinanceModule.default || yahooFinanceModule;
+    if (typeof YF === 'function' || (YF.prototype && YF.prototype.quote)) {
+        try {
+            return new YF();
+        } catch (e) { 
+            return YF; 
+        }
     }
-}
+    return YF;
+};
+
+const yahooFinance = getYahooInstance();
 
 exports.getPortfolio = async (req, res, next) => {
   try {
@@ -174,6 +178,7 @@ exports.buyAsset = async (req, res, next) => {
       [userId, wallet.id, assetId, quantity, price, totalCost]
     );
 
+    await createNotification(userId, 'Order Executed', `Bought ${quantity} qty at ₹${price}`);
     await client.query('COMMIT');
 
     res.status(200).json({ status: 'success', message: 'Buy order executed' });
@@ -222,13 +227,13 @@ exports.sellAsset = async (req, res, next) => {
   
       // 4. Log Transaction
       await client.query(
-        `INSERT INTO transactions (user_id, wallet_id, asset_id, type, quantity, price_per_unit, total_amount, status) 
-         VALUES ($1, $2, $3, 'SELL', $4, $5, $6, 'COMPLETED')`,
-        [userId, walletRes.rows[0].id, assetId, quantity, price, totalProceeds]
-      );
-  
-      await client.query('COMMIT');
-  
+              `INSERT INTO transactions (user_id, wallet_id, asset_id, type, quantity, price_per_unit, total_amount, status) 
+               VALUES ($1, $2, $3, 'SELL', $4, $5, $6, 'COMPLETED')`,
+              [userId, walletRes.rows[0].id, assetId, quantity, price, totalProceeds]
+            );
+        
+            await createNotification(userId, 'Order Executed', `Sold ${quantity} qty at ₹${price}`);
+            await client.query('COMMIT');  
       res.status(200).json({ status: 'success', message: 'Sell order executed' });
     } catch (err) {
       await client.query('ROLLBACK');
@@ -238,16 +243,62 @@ exports.sellAsset = async (req, res, next) => {
     }
   };
 
+exports.getPositions = async (req, res, next) => {
+  try {
+    const positionsRes = await db.query(
+      `SELECT p.id, p.asset_id, a.symbol, a.name, p.quantity, p.average_price, p.product_type 
+       FROM positions p 
+       JOIN assets a ON p.asset_id = a.id 
+       WHERE p.user_id = $1 AND p.quantity > 0`,
+      [req.user.id]
+    );
+
+    let positions = positionsRes.rows;
+    // Fetch live prices (Same logic as Holdings)
+    if (positions.length > 0) {
+        const symbols = positions.map(h => h.symbol.endsWith('.NS') ? h.symbol : `${h.symbol}.NS`);
+        try {
+            const quotes = await yahooFinance.quote(symbols);
+            const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+            const priceMap = {};
+            quotesArray.forEach(q => {
+                priceMap[q.symbol.replace('.NS', '')] = q.regularMarketPrice;
+            });
+
+            positions = positions.map(p => {
+                let livePrice = Number(priceMap[p.symbol] || p.average_price);
+                const currentVal = Number(p.quantity) * livePrice;
+                const investedVal = Number(p.quantity) * Number(p.average_price);
+                const pnl = currentVal - investedVal;
+                
+                return {
+                    ...p,
+                    live_price: livePrice,
+                    pnl: pnl,
+                    pnl_percent: (pnl / investedVal) * 100
+                };
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    res.status(200).json({ status: 'success', data: { positions } });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getTransactions = async (req, res, next) => {
   try {
     const result = await db.query(
-      `SELECT t.id, a.symbol as stock, t.type, t.quantity as qty, t.price_per_unit as price, 
+      `SELECT t.id, COALESCE(a.symbol, 'CASH') as stock, t.type, t.quantity as qty, t.total_amount as price, 
               t.executed_at as date, t.status 
        FROM transactions t
-       JOIN assets a ON t.asset_id = a.id
+       LEFT JOIN assets a ON t.asset_id = a.id
        WHERE t.user_id = $1
        ORDER BY t.executed_at DESC
-       LIMIT 10`,
+       LIMIT 20`,
       [req.user.id]
     );
 
@@ -297,5 +348,91 @@ exports.searchAssets = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+exports.deposit = async (req, res, next) => {
+  const client = await db.getClient();
+  try {
+    const { amount } = req.body;
+    const userId = req.user.id;
+
+    if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
+
+    await client.query('BEGIN');
+
+    // 1. Get Wallet
+    const walletRes = await client.query(
+      'SELECT id, balance FROM wallets WHERE user_id = $1 AND currency = $2 FOR UPDATE',
+      [userId, 'INR']
+    );
+    const wallet = walletRes.rows[0];
+
+    // 2. Add Balance
+    await client.query(
+      'UPDATE wallets SET balance = balance + $1 WHERE id = $2',
+      [amount, wallet.id]
+    );
+
+    // 3. Log Transaction
+    await client.query(
+      `INSERT INTO transactions (user_id, wallet_id, type, total_amount, status) 
+       VALUES ($1, $2, 'DEPOSIT', $3, 'COMPLETED')`,
+      [userId, wallet.id, amount]
+    );
+
+    await createNotification(userId, 'Funds Added', `Deposited ₹${amount} successfully.`);
+    await client.query('COMMIT');
+    res.status(200).json({ status: 'success', message: 'Funds added successfully' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
+  }
+};
+
+exports.withdraw = async (req, res, next) => {
+  const client = await db.getClient();
+  try {
+    const { amount } = req.body;
+    const userId = req.user.id;
+
+    if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
+
+    await client.query('BEGIN');
+
+    // 1. Check Balance
+    const walletRes = await client.query(
+      'SELECT id, balance FROM wallets WHERE user_id = $1 AND currency = $2 FOR UPDATE',
+      [userId, 'INR']
+    );
+    const wallet = walletRes.rows[0];
+
+    if (Number(wallet.balance) < Number(amount)) {
+        throw new AppError('Insufficient funds', 400);
+    }
+
+    // 2. Deduct Balance
+    await client.query(
+      'UPDATE wallets SET balance = balance - $1 WHERE id = $2',
+      [amount, wallet.id]
+    );
+
+    // 3. Log Transaction
+    await client.query(
+      `INSERT INTO transactions (user_id, wallet_id, type, total_amount, status) 
+       VALUES ($1, $2, 'WITHDRAWAL', $3, 'COMPLETED')`,
+      [userId, wallet.id, amount]
+    );
+
+    await createNotification(userId, 'Funds Withdrawn', `Withdrew ₹${amount} successfully.`);
+    await client.query('COMMIT');
+    res.status(200).json({ status: 'success', message: 'Withdrawal successful' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
   }
 };

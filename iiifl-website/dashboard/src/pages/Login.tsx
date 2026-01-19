@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
@@ -6,6 +7,7 @@ import { ModeToggle } from '../components/ui/mode-toggle';
 import api from '../lib/api';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,6 +23,7 @@ const Login = () => {
       const response = await api.post('/auth/login', { email, password });
       const { token, data } = response.data;
       login(token, data.user);
+      navigate('/dashboard'); // Explicit navigate just in case
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
     } finally {
@@ -30,6 +33,10 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4 relative">
+      {/* Top Bar */}
+      <div className="absolute top-6 left-6 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="text-2xl font-bold text-primary tracking-tighter">iiifl</div>
+      </div>
       <div className="absolute top-4 right-4">
         <ModeToggle />
       </div>
@@ -73,7 +80,7 @@ const Login = () => {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Don't have an account? <span className="text-primary hover:underline cursor-pointer">Register now</span>
+            Don't have an account? <span className="text-primary hover:underline cursor-pointer" onClick={() => navigate('/register')}>Register now</span>
           </div>
         </CardContent>
       </Card>

@@ -1,81 +1,73 @@
-import { Bell, Check, Info, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Bell, Check } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import api from "../../lib/api";
 
-const initialNotifications = [
-  {
-    id: 1,
-    title: "Welcome to iiifl Pro",
-    message: "Your account has been successfully created. Start trading now!",
-    time: "2 hrs ago",
-    read: false,
-    type: "info"
-  },
-  {
-    id: 2,
-    title: "Market Alert",
-    message: "NIFTY 50 crossed 22,000 mark today.",
-    time: "5 hrs ago",
-    read: false,
-    type: "alert"
-  },
-  {
-    id: 3,
-    title: "Order Executed",
-    message: "Buy order for 10 TCS @ 3890 completed.",
-    time: "1 day ago",
-    read: true,
-    type: "success"
-  }
-];
+export const NotificationDropdown = ({ onClose, onRead }: { onClose: () => void, onRead?: () => void }) => {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-  const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications');
+      setNotifications(res.data.data.notifications);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const clearAll = () => {
-    setNotifications([]);
+  const markAllRead = async () => {
+      try {
+          await api.put('/notifications/read');
+          fetchNotifications();
+          if (onRead) onRead();
+      } catch (err) { console.error(err); }
   };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <>
-      <div className="fixed inset-0 z-40" onClick={onClose}></div>
-      <Card className="absolute top-16 right-4 w-80 z-50 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-        <CardHeader className="pb-3 border-b flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-semibold">Notifications</CardTitle>
-          <div className="flex gap-2">
-            <button onClick={markAllRead} className="text-xs text-primary hover:underline">Mark read</button>
-            <button onClick={clearAll} className="text-xs text-muted-foreground hover:underline">Clear</button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 max-h-[400px] overflow-auto">
-          {notifications.length === 0 ? (
-             <div className="p-8 text-center text-muted-foreground text-sm">
-                No new notifications.
-             </div>
-          ) : (
-            notifications.map((n) => (
+    <div className="absolute top-14 right-0 w-80 bg-card border rounded-lg shadow-lg z-50 animate-in slide-in-from-top-2">
+      <div className="flex items-center justify-between p-4 border-b">
+        <h4 className="font-semibold">Notifications</h4>
+        {unreadCount > 0 && (
+            <Button variant="ghost" size="sm" className="text-xs h-auto py-1" onClick={markAllRead}>
+                Mark all read
+            </Button>
+        )}
+      </div>
+      <div className="max-h-[300px] overflow-y-auto">
+        {loading ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+        ) : notifications.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground flex flex-col items-center">
+                <Bell size={24} className="mb-2 opacity-50" />
+                <p>No notifications</p>
+            </div>
+        ) : (
+            notifications.map((notif) => (
               <div 
-                key={n.id} 
-                className={`p-4 border-b last:border-0 hover:bg-muted/50 transition-colors ${!n.read ? 'bg-primary/5' : ''}`}
+                key={notif.id} 
+                className={`p-4 border-b last:border-0 hover:bg-secondary/50 transition-colors ${!notif.is_read ? 'bg-primary/5' : ''}`}
               >
-                <div className="flex gap-3">
-                  <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${!n.read ? 'bg-primary' : 'bg-transparent'}`} />
-                  <div>
-                    <h4 className="text-sm font-medium leading-none mb-1">{n.title}</h4>
-                    <p className="text-xs text-muted-foreground mb-2">{n.message}</p>
-                    <span className="text-[10px] text-muted-foreground">{n.time}</span>
-                  </div>
+                <div className="flex justify-between items-start gap-2">
+                    <h5 className="text-sm font-medium">{notif.title}</h5>
+                    {!notif.is_read && <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">{notif.message}</p>
+                <p className="text-[10px] text-muted-foreground mt-2 text-right">
+                    {new Date(notif.created_at).toLocaleString()}
+                </p>
               </div>
             ))
-          )}
-        </CardContent>
-      </Card>
-    </>
+        )}
+      </div>
+    </div>
   );
 };

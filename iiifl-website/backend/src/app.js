@@ -8,6 +8,8 @@ const portfolioRoutes = require('./routes/portfolioRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const marketRoutes = require('./routes/marketRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const ordersRoutes = require('./routes/ordersRoutes');
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/market', marketRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/orders', ordersRoutes);
 
 // 3) Unhandled Routes
 app.all('*', (req, res, next) => {

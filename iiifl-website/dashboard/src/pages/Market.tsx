@@ -1,47 +1,33 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Trash2, TrendingUp, TrendingDown, Search, Plus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Search, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
-import StockChart from "../components/dashboard/StockChart";
 
 const Market = () => {
+  const navigate = useNavigate();
   const [indices, setIndices] = useState<any[]>([]);
   const [watchlist, setWatchlist] = useState<any[]>([]);
+  const [gainers, setGainers] = useState<any[]>([]);
+  const [losers, setLosers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
-      // Fetch Indices
-      try {
-        const idxRes = await api.get('/market/indices');
-        setIndices(idxRes.data?.data?.indices || []);
-      } catch (e) {
-        console.error("Failed to load indices", e);
-        setIndices([]);
-      }
-
-      // Fetch Watchlist
-      try {
-        const wlRes = await api.get('/market/watchlist');
-        const list = wlRes.data?.data?.watchlist || [];
-        setWatchlist(list);
-        
-        if (!selectedSymbol && list.length > 0) {
-            setSelectedSymbol(list[0].symbol);
-        }
-      } catch (e) {
-        console.error("Failed to load watchlist", e);
-        setWatchlist([]);
-      }
-
+      const [idxRes, wlRes, movRes] = await Promise.all([
+          api.get('/market/indices'),
+          api.get('/market/watchlist'),
+          api.get('/market/movers')
+      ]);
+      setIndices(idxRes.data.data.indices);
+      setWatchlist(wlRes.data.data.watchlist);
+      setGainers(movRes.data.data.gainers);
+      setLosers(movRes.data.data.losers);
     } catch (err) {
-      console.error("Critical Market Error", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -49,168 +35,181 @@ const Market = () => {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchData, 10000); // Poll every 10s
+    return () => clearInterval(interval);
   }, []);
 
-  // Search Logic
-  useEffect(() => {
-    if (searchQuery.length > 1) {
-      const delayDebounceFn = setTimeout(() => {
-        api.get(`/assets/search?query=${searchQuery}`)
-           .then(res => setSearchResults(res.data.data.assets));
-      }, 500);
-      return () => clearTimeout(delayDebounceFn);
-    } else {
-        setSearchResults([]);
-    }
-  }, [searchQuery]);
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery) return;
+    try {
+        const res = await api.get(`/assets/search?query=${searchQuery}`);
+        setSearchResults(res.data.data.assets);
+    } catch (err) { console.error(err); }
+  };
 
-  const addToWatchlist = async (assetId: string) => {
+  const addToWatchlist = async (assetId: number) => {
       try {
           await api.post('/market/watchlist', { assetId });
           setSearchQuery("");
           setSearchResults([]);
-          fetchData(); 
-      } catch (err) {
-          alert("Failed to add");
-      }
+          fetchData();
+      } catch (err) { alert("Failed to add"); }
   };
 
-  const removeFromWatchlist = async (id: string) => {
+  const removeFromWatchlist = async (id: number) => {
       try {
           await api.delete(`/market/watchlist/${id}`);
           fetchData();
-      } catch (err) {
-          alert("Failed to remove");
-      }
+      } catch (err) { alert("Failed to remove"); }
   };
 
   return (
     <div className="space-y-6">
-       
-       <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Market</h2>
-              <p className="text-muted-foreground">Track indices and your favorite stocks.</p>
-            </div>
-       </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Market</h2>
+          <p className="text-muted-foreground">Live indices and intraday movers.</p>
+        </div>
+      </div>
 
-       {/* Indices */}
-       <div className="grid gap-4 md:grid-cols-2">
-          {indices?.map(idx => (
-            <Card key={idx.symbol}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{idx.name}</CardTitle>
-                    {idx.change >= 0 ? <TrendingUp className="text-emerald-500" size={20} /> : <TrendingDown className="text-red-500" size={20} />}
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{Math.round(idx.price).toLocaleString()}</div>
-                    <p className={`text-xs mt-1 ${idx.change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {idx.change > 0 ? '+' : ''}{idx.change.toFixed(2)} ({idx.changePercent.toFixed(2)}%)
-                    </p>
-                </CardContent>
-            </Card>
-          ))}
-       </div>
+      {/* Indices */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {indices.map((idx) => (
+          <Card key={idx.symbol}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{idx.name}</CardTitle>
+              {idx.change >= 0 ? <TrendingUp className="text-emerald-500" /> : <TrendingDown className="text-red-500" />}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₹{idx.price.toLocaleString()}</div>
+              <p className={`text-xs ${idx.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                {idx.change > 0 ? "+" : ""}{idx.change.toFixed(2)} ({idx.changePercent.toFixed(2)}%)
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-       {/* Main Content: Chart + Watchlist */}
-       <div className="grid gap-6 md:grid-cols-3">
-           
-           {/* Chart (Takes 2 columns) */}
-           <div className="md:col-span-2 space-y-6">
-               {selectedSymbol ? (
-                   <StockChart symbol={selectedSymbol} />
-               ) : (
-                   <Card className="h-[300px] flex items-center justify-center text-muted-foreground">
-                       Select a stock to view chart
-                   </Card>
-               )}
+      {/* Intraday Movers */}
+      <div className="grid gap-6 md:grid-cols-2">
+          {/* Top Gainers */}
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-emerald-500">
+                      <TrendingUp size={20} /> Top Intraday Gainers
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  {gainers.length === 0 ? <p className="text-sm text-muted-foreground">Loading movers...</p> : gainers.map((stock) => (
+                      <div key={stock.symbol} className="flex items-center justify-between border-b pb-2 last:border-0 cursor-pointer hover:bg-secondary/50 p-2 rounded" onClick={() => navigate(`/dashboard/stock/${stock.symbol}`)}>
+                          <div>
+                              <div className="font-bold">{stock.symbol}</div>
+                              <div className="text-xs text-muted-foreground">{stock.name}</div>
+                          </div>
+                          <div className="text-right">
+                              <div className="font-mono">₹{stock.price.toLocaleString()}</div>
+                              <div className="text-xs text-emerald-500 font-bold">+{stock.changePercent.toFixed(2)}%</div>
+                          </div>
+                      </div>
+                  ))}
+              </CardContent>
+          </Card>
 
-               {/* Add Symbol (Moved here for better layout) */}
-               <Card className="h-fit">
-                <CardHeader>
-                    <CardTitle>Add Symbol</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <input
-                            type="text"
-                            placeholder="Search stocks to add..."
-                            className="w-full pl-9 pr-4 py-2 border rounded-md bg-background"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        {searchResults.length > 0 && (
-                            <div className="absolute top-full left-0 w-full bg-card border rounded-md mt-1 shadow-lg max-h-60 overflow-auto z-10">
-                                {searchResults.map(asset => (
-                                    <div 
-                                        key={asset.id} 
-                                        className="px-3 py-2 hover:bg-secondary cursor-pointer flex justify-between items-center"
-                                        onClick={() => addToWatchlist(asset.id)}
-                                    >
-                                        <div>
-                                            <div className="font-bold text-sm">{asset.symbol}</div>
-                                            <div className="text-xs text-muted-foreground">{asset.name}</div>
-                                        </div>
-                                        <Plus size={16} className="text-muted-foreground" />
-                                    </div>
-                                ))}
+          {/* Top Losers */}
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-red-500">
+                      <TrendingDown size={20} /> Top Intraday Losers
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  {losers.length === 0 ? <p className="text-sm text-muted-foreground">Loading movers...</p> : losers.map((stock) => (
+                      <div key={stock.symbol} className="flex items-center justify-between border-b pb-2 last:border-0 cursor-pointer hover:bg-secondary/50 p-2 rounded" onClick={() => navigate(`/dashboard/stock/${stock.symbol}`)}>
+                          <div>
+                              <div className="font-bold">{stock.symbol}</div>
+                              <div className="text-xs text-muted-foreground">{stock.name}</div>
+                          </div>
+                          <div className="text-right">
+                              <div className="font-mono">₹{stock.price.toLocaleString()}</div>
+                              <div className="text-xs text-red-500 font-bold">{stock.changePercent.toFixed(2)}%</div>
+                          </div>
+                      </div>
+                  ))}
+              </CardContent>
+          </Card>
+      </div>
+
+      {/* Watchlist */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>My Watchlist</CardTitle>
+            
+            {/* Add to Watchlist Search */}
+            <div className="relative w-64">
+                <div className="flex items-center gap-2 border rounded-md px-3 py-1">
+                    <Search size={16} className="text-muted-foreground" />
+                    <input 
+                        className="bg-transparent outline-none text-sm w-full"
+                        placeholder="Add stock..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyUp={(e) => e.key === 'Enter' && handleSearch(e)}
+                    />
+                </div>
+                {searchResults.length > 0 && (
+                    <div className="absolute top-full right-0 w-full bg-card border rounded-md mt-1 shadow-lg z-10">
+                        {searchResults.map(asset => (
+                            <div key={asset.id} className="p-2 hover:bg-secondary cursor-pointer text-sm flex justify-between" onClick={() => addToWatchlist(asset.id)}>
+                                <span>{asset.symbol}</span>
+                                <PlusIcon />
                             </div>
-                        )}
+                        ))}
                     </div>
-                </CardContent>
-            </Card>
-           </div>
-
-           {/* Watchlist Table (Right Sidebar Style) */}
-           <Card className="md:col-span-1 h-fit">
-               <CardHeader>
-                   <CardTitle>My Watchlist</CardTitle>
-               </CardHeader>
-               <CardContent className="p-0">
-                   <div className="overflow-x-auto">
-                       <table className="w-full text-sm text-left">
-                           <thead className="text-muted-foreground border-b bg-secondary/30">
-                               <tr>
-                                   <th className="px-4 py-3">Symbol</th>
-                                   <th className="px-4 py-3 text-right">Price</th>
-                                   <th className="px-4 py-3 text-right"></th>
-                               </tr>
-                           </thead>
-                           <tbody>
-                               {watchlist?.length === 0 ? (
-                                   <tr><td colSpan={3} className="text-center py-8 text-muted-foreground">Watchlist is empty.</td></tr>
-                               ) : (
-                                   watchlist?.map(item => (
-                                       <tr 
-                                         key={item.id} 
-                                         className={`border-b last:border-0 hover:bg-muted/50 cursor-pointer ${selectedSymbol === item.symbol ? 'bg-secondary' : ''}`}
-                                         onClick={() => setSelectedSymbol(item.symbol)}
-                                       >
-                                           <td className="px-4 py-4 font-medium">
-                                               {item.symbol}
-                                               <div className={`text-[10px] ${item.change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                  {item.changePercent?.toFixed(2)}%
-                                               </div>
-                                           </td>
-                                           <td className="px-4 py-4 text-right font-mono">₹{item.price.toFixed(2)}</td>
-                                           <td className="px-2 py-4 text-right">
-                                               <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id); }}>
-                                                   <Trash2 size={14} />
-                                               </Button>
-                                           </td>
-                                       </tr>
-                                   ))
-                               )}
-                           </tbody>
-                       </table>
-                   </div>
-               </CardContent>
-           </Card>
-
-       </div>
+                )}
+            </div>
+        </CardHeader>
+        <CardContent>
+            {watchlist.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Your watchlist is empty.</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-muted-foreground border-b">
+                            <tr>
+                                <th className="pb-3 pl-2">Symbol</th>
+                                <th className="pb-3">Price</th>
+                                <th className="pb-3">Change</th>
+                                <th className="pb-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {watchlist.map((item) => (
+                                <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/dashboard/stock/${item.symbol}`)}>
+                                    <td className="py-4 pl-2 font-bold">{item.symbol}</td>
+                                    <td className="py-4">₹{item.price?.toLocaleString()}</td>
+                                    <td className={`py-4 ${item.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                        {item.changePercent?.toFixed(2)}%
+                                    </td>
+                                    <td className="py-4 text-right">
+                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id); }}>
+                                            <Trash2 size={16} className="text-muted-foreground hover:text-destructive" />
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+const PlusIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+);
 
 export default Market;

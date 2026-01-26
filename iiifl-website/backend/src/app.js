@@ -10,6 +10,8 @@ const assetRoutes = require('./routes/assetRoutes');
 const marketRoutes = require('./routes/marketRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const ordersRoutes = require('./routes/ordersRoutes');
+// Start Worker (Mocking a separate process behavior)
+require('./workers/marketWorker');
 
 const app = express();
 
@@ -36,6 +38,7 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/orders', ordersRoutes);
+app.use('/api/alerts', alertRoutes);
 
 // 3) Unhandled Routes
 app.all('*', (req, res, next) => {

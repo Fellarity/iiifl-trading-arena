@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Search, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Search, Trash2, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 const Market = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Market = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("Favorites");
 
   const fetchData = async () => {
     try {
@@ -35,7 +37,7 @@ const Market = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000); // Poll every 10s
+    const interval = setInterval(fetchData, 10000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -50,7 +52,7 @@ const Market = () => {
 
   const addToWatchlist = async (assetId: number) => {
       try {
-          await api.post('/market/watchlist', { assetId });
+          await api.post('/market/watchlist', { assetId, tag: activeTab });
           setSearchQuery("");
           setSearchResults([]);
           fetchData();
@@ -63,6 +65,10 @@ const Market = () => {
           fetchData();
       } catch (err) { alert("Failed to remove"); }
   };
+
+  // Group by Tag
+  const tags = [...new Set(watchlist.map(w => w.tag || "Favorites"))];
+  if (!tags.includes("Favorites")) tags.unshift("Favorites");
 
   return (
     <div className="space-y-6">
@@ -140,18 +146,22 @@ const Market = () => {
           </Card>
       </div>
 
-      {/* Watchlist */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>My Watchlist</CardTitle>
+      {/* Watchlist with Tabs */}
+      <Tabs defaultValue="Favorites" className="w-full" onValueChange={setActiveTab}>
+        <div className="flex items-center justify-between mb-4">
+            <TabsList>
+                {tags.map(tag => (
+                    <TabsTrigger key={tag} value={tag}>{tag}</TabsTrigger>
+                ))}
+            </TabsList>
             
             {/* Add to Watchlist Search */}
             <div className="relative w-64">
-                <div className="flex items-center gap-2 border rounded-md px-3 py-1">
+                <div className="flex items-center gap-2 border rounded-md px-3 py-1 bg-background">
                     <Search size={16} className="text-muted-foreground" />
                     <input 
                         className="bg-transparent outline-none text-sm w-full"
-                        placeholder="Add stock..."
+                        placeholder={`Add to ${activeTab}...`}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyUp={(e) => e.key === 'Enter' && handleSearch(e)}
@@ -168,42 +178,49 @@ const Market = () => {
                     </div>
                 )}
             </div>
-        </CardHeader>
-        <CardContent>
-            {watchlist.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Your watchlist is empty.</p>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-muted-foreground border-b">
-                            <tr>
-                                <th className="pb-3 pl-2">Symbol</th>
-                                <th className="pb-3">Price</th>
-                                <th className="pb-3">Change</th>
-                                <th className="pb-3 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {watchlist.map((item) => (
-                                <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/dashboard/stock/${item.symbol}`)}>
-                                    <td className="py-4 pl-2 font-bold">{item.symbol}</td>
-                                    <td className="py-4">₹{item.price?.toLocaleString()}</td>
-                                    <td className={`py-4 ${item.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                                        {item.changePercent?.toFixed(2)}%
-                                    </td>
-                                    <td className="py-4 text-right">
-                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id); }}>
-                                            <Trash2 size={16} className="text-muted-foreground hover:text-destructive" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {tags.map(tag => (
+            <TabsContent key={tag} value={tag}>
+                <Card>
+                    <CardContent className="pt-6">
+                        {watchlist.filter(w => (w.tag || "Favorites") === tag).length === 0 ? (
+                            <p className="text-muted-foreground text-sm">Empty watchlist.</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-muted-foreground border-b">
+                                        <tr>
+                                            <th className="pb-3 pl-2">Symbol</th>
+                                            <th className="pb-3">Price</th>
+                                            <th className="pb-3">Change</th>
+                                            <th className="pb-3 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {watchlist.filter(w => (w.tag || "Favorites") === tag).map((item) => (
+                                            <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/dashboard/stock/${item.symbol}`)}>
+                                                <td className="py-4 pl-2 font-bold">{item.symbol}</td>
+                                                <td className="py-4">₹{item.price?.toLocaleString()}</td>
+                                                <td className={`py-4 ${item.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                                    {item.changePercent?.toFixed(2)}%
+                                                </td>
+                                                <td className="py-4 text-right">
+                                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id); }}>
+                                                        <Trash2 size={16} className="text-muted-foreground hover:text-destructive" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };

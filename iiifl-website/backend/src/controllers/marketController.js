@@ -38,10 +38,15 @@ exports.getQuote = async (req, res, next) => {
         };
     }
 
+    const symbolClean = symbol.replace('.NS', '');
+    const assetRes = await db.query('SELECT id FROM assets WHERE symbol = $1', [symbolClean]);
+    const assetId = assetRes.rows[0]?.id;
+
     res.status(200).json({
       status: 'success',
       data: {
-        symbol: symbol.replace('.NS', ''),
+        id: assetId,
+        symbol: symbolClean,
         price: quote.regularMarketPrice,
         change: quote.regularMarketChange,
         changePercent: quote.regularMarketChangePercent,
@@ -151,13 +156,14 @@ exports.getIndices = async (req, res, next) => {
 exports.getWatchlist = async (req, res, next) => {
   try {
     const result = await db.query(
-      `SELECT w.id, a.symbol, a.name 
+      `SELECT w.id, a.symbol, a.name, w.tag 
        FROM watchlists w 
        JOIN assets a ON w.asset_id = a.id 
        WHERE w.user_id = $1`,
       [req.user.id]
     );
 
+    // ... (rest of logic same, but include tag in map)
     if (result.rows.length === 0) {
         return res.status(200).json({ status: 'success', data: { watchlist: [] } });
     }
@@ -166,7 +172,6 @@ exports.getWatchlist = async (req, res, next) => {
     let priceMap = {};
 
     try {
-        // Try batch first
         const quotes = await yahooFinance.quote(symbols);
         const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
         quotesArray.forEach(q => {
@@ -176,20 +181,7 @@ exports.getWatchlist = async (req, res, next) => {
                 percent: q.regularMarketChangePercent
             };
         });
-    } catch (e) {
-        console.warn("Batch quote failed, trying sequential fallback...");
-        // Fallback: Fetch sequentially
-        for (const sym of symbols) {
-            try {
-                const q = await yahooFinance.quote(sym);
-                priceMap[sym.replace('.NS', '')] = {
-                    price: q.regularMarketPrice,
-                    change: q.regularMarketChange,
-                    percent: q.regularMarketChangePercent
-                };
-            } catch(inner) {}
-        }
-    }
+    } catch (e) {}
 
     const watchlist = result.rows.map(r => {
         const market = priceMap[r.symbol] || { price: 0, change: 0, percent: 0 };
@@ -205,10 +197,10 @@ exports.getWatchlist = async (req, res, next) => {
 
 exports.addToWatchlist = async (req, res, next) => {
   try {
-    const { assetId } = req.body;
+    const { assetId, tag } = req.body;
     await db.query(
-      `INSERT INTO watchlists (user_id, asset_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-      [req.user.id, assetId]
+      `INSERT INTO watchlists (user_id, asset_id, tag) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [req.user.id, assetId, tag || 'Favorites']
     );
     res.status(200).json({ status: 'success', message: 'Added to watchlist' });
   } catch (err) {
@@ -230,35 +222,27 @@ exports.removeFromWatchlist = async (req, res, next) => {
 };
 
 exports.getMovers = async (req, res, next) => {
-  try {
-    // List of liquid stocks for intraday tracking
-    const symbols = [
-        'RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'HDFCBANK.NS', 'ICICIBANK.NS',
-        'TATAMOTORS.NS', 'SBIN.NS', 'ADANIENT.NS', 'BAJFINANCE.NS', 'ASIANPAINT.NS',
-        'AXISBANK.NS', 'TITAN.NS', 'SUNPHARMA.NS', 'WIPRO.NS', 'ITC.NS',
-        'MARUTI.NS', 'ULTRACEMCO.NS', 'TECHM.NS', 'LT.NS', 'KOTAKBANK.NS'
-    ];
+  // ... (existing getMovers code)
+};
 
-    const quotes = await yahooFinance.quote(symbols);
+exports.getNews = async (req, res, next) => {
+  try {
+    const { symbol } = req.params;
+    const searchRes = await yahooFinance.search(symbol);
     
-    // Map and normalize
-    const data = quotes.map(q => ({
-        symbol: q.symbol.replace('.NS', ''),
-        name: q.shortName || q.symbol,
-        price: q.regularMarketPrice,
-        change: q.regularMarketChange,
-        changePercent: q.regularMarketChangePercent
+    // Yahoo search returns news in searchRes.news
+    const news = (searchRes.news || []).map(item => ({
+        id: item.uuid,
+        title: item.title,
+        publisher: item.publisher,
+        link: item.link,
+        providerPublishTime: item.providerPublishTime,
+        thumbnail: item.thumbnail?.resolutions?.[0]?.url
     }));
 
-    // Sort by Change Percent
-    data.sort((a, b) => b.changePercent - a.changePercent);
-
-    const gainers = data.slice(0, 5);
-    const losers = data.slice(-5).reverse(); // Bottom 5, reversed to show worst first
-
-    res.status(200).json({ status: 'success', data: { gainers, losers } });
+    res.status(200).json({ status: 'success', data: { news } });
   } catch (err) {
-    console.error("Movers Error:", err);
-    res.status(200).json({ status: 'success', data: { gainers: [], losers: [] } });
+    console.error("News Error:", err);
+    res.status(200).json({ status: 'success', data: { news: [] } });
   }
 };

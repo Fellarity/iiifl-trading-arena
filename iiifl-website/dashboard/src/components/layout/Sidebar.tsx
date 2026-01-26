@@ -1,4 +1,4 @@
-import { Home, PieChart, BarChart3, Wallet, Settings, LogOut, List } from 'lucide-react';
+import { Home, PieChart, BarChart3, Wallet, Settings, LogOut, List, Layers } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NavLink } from 'react-router-dom';
 
@@ -17,6 +17,7 @@ const Sidebar = () => {
         <NavItem to="/dashboard/orders" icon={<List size={20} />} label="Orders" />
         <NavItem to="/dashboard/portfolio" icon={<PieChart size={20} />} label="Portfolio" />
         <NavItem to="/dashboard/market" icon={<BarChart3 size={20} />} label="Market" />
+        <NavItem to="/dashboard/options" icon={<Layers size={20} />} label="Options" />
         <NavItem to="/dashboard/funds" icon={<Wallet size={20} />} label="Funds" />
         <NavItem to="/dashboard/settings" icon={<Settings size={20} />} label="Settings" />
       </nav>

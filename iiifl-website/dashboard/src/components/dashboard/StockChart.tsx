@@ -4,10 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import api from '../../lib/api';
 import { useTheme } from '../../context/ThemeContext';
+import { calculateSMA, calculateEMA } from '../../lib/indicators';
+import { Settings2 } from 'lucide-react';
 
 const StockChart = ({ symbol }: { symbol: string }) => {
+  const [rawData, setRawData] = useState<any[]>([]);
   const [series, setSeries] = useState<any[]>([]);
   const [range, setRange] = useState('3m');
+  const [indicators, setIndicators] = useState<string[]>([]);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -18,7 +22,7 @@ const StockChart = ({ symbol }: { symbol: string }) => {
        .then(res => {
            const raw = res.data.data.candles;
            if (!raw || raw.length === 0) {
-               setSeries([]);
+               setRawData([]);
                return;
            }
            // Format: [timestamp, open, high, low, close]
@@ -26,14 +30,37 @@ const StockChart = ({ symbol }: { symbol: string }) => {
                x: new Date(d.time),
                y: [d.open, d.high, d.low, d.close]
            }));
-           setSeries([{ name: 'Price', data }]);
+           setRawData(data);
        })
        .catch(console.error);
   }, [symbol, range]);
 
+  // Recalculate series when rawData or indicators change
+  useEffect(() => {
+      if (rawData.length === 0) {
+          setSeries([]);
+          return;
+      }
+
+      let chartSeries: any[] = [{ name: 'Price', type: 'candlestick', data: rawData }];
+
+      if (indicators.includes('SMA20')) {
+          chartSeries.push({ name: 'SMA 20', type: 'line', data: calculateSMA(rawData, 20) });
+      }
+      if (indicators.includes('EMA50')) {
+          chartSeries.push({ name: 'EMA 50', type: 'line', data: calculateEMA(rawData, 50) });
+      }
+
+      setSeries(chartSeries);
+  }, [rawData, indicators]);
+
+  const toggleIndicator = (ind: string) => {
+      setIndicators(prev => prev.includes(ind) ? prev.filter(i => i !== ind) : [...prev, ind]);
+  };
+
   const options: any = {
     chart: {
-      type: 'candlestick',
+      type: 'candlestick', // Default, but overridden by series type
       height: 300,
       background: 'transparent',
       toolbar: { show: false },
@@ -41,6 +68,10 @@ const StockChart = ({ symbol }: { symbol: string }) => {
     },
     theme: {
         mode: theme === 'dark' ? 'dark' : 'light'
+    },
+    stroke: {
+        width: [1, 2, 2], // Candle border, Line 1, Line 2
+        curve: 'smooth'
     },
     xaxis: {
       type: 'datetime',
@@ -55,7 +86,7 @@ const StockChart = ({ symbol }: { symbol: string }) => {
     },
     yaxis: {
       tooltip: { enabled: true },
-      opposite: true // Put y-axis on right for mobile friendliness (thumb doesn't cover)
+      opposite: true 
     },
     grid: {
         borderColor: theme === 'dark' ? '#374151' : '#e5e7eb',
@@ -68,6 +99,10 @@ const StockChart = ({ symbol }: { symbol: string }) => {
                 downward: '#ef4444'
             }
         }
+    },
+    legend: {
+        position: 'top',
+        horizontalAlign: 'left'
     }
   };
 
@@ -80,11 +115,33 @@ const StockChart = ({ symbol }: { symbol: string }) => {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between py-4">
-        <CardTitle className="text-base md:text-lg">{symbol}</CardTitle>
+      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-2">
+        <div className="flex items-center gap-2">
+            <CardTitle className="text-base md:text-lg">{symbol}</CardTitle>
+            
+            {/* Indicators Toggle */}
+            <div className="flex gap-1 ml-2">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`h-6 text-[10px] px-2 ${indicators.includes('SMA20') ? 'bg-primary/20 border-primary' : ''}`}
+                    onClick={() => toggleIndicator('SMA20')}
+                >
+                    SMA 20
+                </Button>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`h-6 text-[10px] px-2 ${indicators.includes('EMA50') ? 'bg-primary/20 border-primary' : ''}`}
+                    onClick={() => toggleIndicator('EMA50')}
+                >
+                    EMA 50
+                </Button>
+            </div>
+        </div>
         
-        {/* Mobile-friendly Toggles */}
-        <div className="flex bg-secondary/50 rounded-lg p-1 gap-1">
+        {/* Ranges */}
+        <div className="flex bg-secondary/50 rounded-lg p-1 gap-1 self-start md:self-auto">
             {ranges.map(r => (
                 <button
                     key={r.value}

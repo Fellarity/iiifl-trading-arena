@@ -2,16 +2,22 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import StockChart from "../components/dashboard/StockChart";
 import TradeModal from "../components/dashboard/TradeModal";
+import MarketDepth from "../components/dashboard/MarketDepth";
+import OptionChain from "../components/dashboard/OptionChain";
+import StockNews from "../components/dashboard/StockNews";
+import AlertModal from "../components/dashboard/AlertModal";
 import api from "../lib/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 const StockDetail = () => {
   const { symbol } = useParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isTradeOpen, setIsTradeOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const fetchData = async () => {
     if (!symbol) return;
@@ -51,30 +57,58 @@ const StockDetail = () => {
                 </span>
             </div>
         </div>
-        <div className="flex gap-3">
-            <Button size="lg" className="w-32" onClick={() => setIsTradeOpen(true)}>Trade</Button>
-            <Button size="lg" variant="outline" className="w-32">Alert</Button>
+        <div className="flex gap-3 w-full md:w-auto">
+            <Button size="lg" className="flex-1 md:w-32 bg-emerald-600 hover:bg-emerald-700" onClick={() => setIsTradeOpen(true)}>Trade</Button>
+            <Button size="lg" variant="outline" className="flex-1 md:w-32" onClick={() => setIsAlertOpen(true)}>Alert</Button>
         </div>
       </div>
 
-      {/* Main Chart */}
-      <div className="h-[400px]">
-          <StockChart symbol={data.symbol} />
-      </div>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="options">Option Chain</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 h-[450px]">
+                    <StockChart symbol={data.symbol} />
+                </div>
+                <div className="lg:col-span-1">
+                    <MarketDepth price={data.price} />
+                </div>
+            </div>
 
-      {/* Fundamentals / Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Open" value={data.open} />
-          <StatCard label="Previous Close" value={data.prevClose} />
-          <StatCard label="Day High" value={data.dayHigh} />
-          <StatCard label="Day Low" value={data.dayLow} />
-      </div>
+            {/* Fundamentals / Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard label="Open" value={data.open} />
+                <StatCard label="Previous Close" value={data.prevClose} />
+                <StatCard label="Day High" value={data.dayHigh} />
+                <StatCard label="Day Low" value={data.dayLow} />
+            </div>
 
-      {/* Modal */}
+            {/* News Section */}
+            <StockNews symbol={data.symbol} />
+        </TabsContent>
+
+        <TabsContent value="options">
+            <OptionChain symbol={data.symbol} spotPrice={data.price} />
+        </TabsContent>
+      </Tabs>
+
+      {/* Modals */}
       <TradeModal 
         isOpen={isTradeOpen} 
         onClose={() => setIsTradeOpen(false)} 
-        onSuccess={() => {}} // No refresh needed for this page unless we show holdings here
+        onSuccess={() => {}} 
+      />
+
+      <AlertModal 
+        isOpen={isAlertOpen} 
+        onClose={() => setIsAlertOpen(false)} 
+        symbol={data.symbol}
+        assetId={data.id}
+        currentPrice={data.price}
       />
 
     </div>

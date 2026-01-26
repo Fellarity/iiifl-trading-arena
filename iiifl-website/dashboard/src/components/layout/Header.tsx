@@ -7,14 +7,12 @@ import { ModeToggle } from '../ui/mode-toggle';
 import { NotificationDropdown } from '../dashboard/Notifications';
 import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
-import MobileNav from './MobileNav';
 
-const Header = () => {
+const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isTradeOpen, setIsTradeOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -59,7 +57,7 @@ const Header = () => {
         
         {/* Mobile Toggle */}
         <div className="md:hidden flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(true)}>
+            <Button variant="ghost" size="icon" onClick={onMenuClick}>
                 <Menu size={24} />
             </Button>
             <div className="font-bold text-lg">iiifl</div>
@@ -134,8 +132,6 @@ const Header = () => {
         </div>
       </header>
       
-      <MobileNav isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} />
-
       <TradeModal 
         isOpen={isTradeOpen} 
         onClose={() => setIsTradeOpen(false)} 

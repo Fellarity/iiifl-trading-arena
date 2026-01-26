@@ -1,36 +1,62 @@
 const test = async () => {
+  const BASE_URL = 'http://localhost:5000/api';
+  let token = '';
+
+  const log = (msg, type = 'INFO') => {
+      const icons = { INFO: 'ℹ️', SUCCESS: '✅', ERROR: '❌', WARN: '⚠️' };
+      console.log(`${icons[type]} ${msg}`);
+  };
+
   try {
-    console.log("1. Logging in...");
-    const loginRes = await fetch('http://localhost:5000/api/auth/login', {
+    // 1. Authentication
+    log("Testing Authentication...");
+    const loginRes = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'trader@iiifl.com', password: 'password123' })
     });
     const loginData = await loginRes.json();
-    if (!loginRes.ok) throw new Error(JSON.stringify(loginData));
-    
-    const token = loginData.token;
-    console.log("✅ Login Success");
+    if (!loginRes.ok) throw new Error(`Login Failed: ${JSON.stringify(loginData)}`);
+    token = loginData.token;
+    log("Authentication System: Operational", 'SUCCESS');
 
-    console.log("2. Fetching Orders...");
-    const ordersRes = await fetch('http://localhost:5000/api/orders?status=open', {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // 2. Market Data
+    log("Testing Market Data Feeds...");
+    const quoteRes = await fetch(`${BASE_URL}/market/quote/RELIANCE`, { headers });
+    const quoteData = await quoteRes.json();
+    if (!quoteData.data.id) log("Asset ID missing in Quote (Critical for Alerts/Orders)", 'ERROR');
+    else log(`Live Quote: RELIANCE @ ₹${quoteData.data.price}`, 'SUCCESS');
+
+    const newsRes = await fetch(`${BASE_URL}/market/news/RELIANCE`, { headers });
+    const newsData = await newsRes.json();
+    log(`News Feed: Fetched ${newsData.data.news.length} articles`, 'SUCCESS');
+
+    // 3. Orders & Portfolio
+    log("Testing Order Management...");
+    const ordersRes = await fetch(`${BASE_URL}/orders?status=open`, { headers });
     const ordersData = await ordersRes.json();
-    if (!ordersRes.ok) throw new Error(JSON.stringify(ordersData));
-    console.log(`✅ Orders Fetch Success. Count: ${ordersData.data.orders.length}`);
+    log(`Orders Book: ${ordersData.data.orders.length} open orders found`, 'SUCCESS');
 
-    console.log("3. Fetching Indices...");
-    const indicesRes = await fetch('http://localhost:5000/api/market/indices', {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    const indicesData = await indicesRes.json();
-    if (!indicesRes.ok) throw new Error(JSON.stringify(indicesData));
-    console.log(`✅ Indices Fetch Success. Count: ${indicesData.data.indices.length}`);
-    console.log("Indices:", indicesData.data.indices.map(i => i.name).join(', '));
+    const holdingsRes = await fetch(`${BASE_URL}/portfolio`, { headers });
+    const holdingsData = await holdingsRes.json();
+    log(`Portfolio: Total Value ₹${holdingsData.data.summary.total_portfolio_value}`, 'SUCCESS');
+
+    // 4. Alerts
+    log("Testing Alert System...");
+    const alertsRes = await fetch(`${BASE_URL}/alerts`, { headers });
+    const alertsData = await alertsRes.json();
+    log(`Alerts: ${alertsData.data.alerts.length} active alerts`, 'SUCCESS');
+
+    // 5. Watchlist
+    log("Testing Watchlist...");
+    const wlRes = await fetch(`${BASE_URL}/market/watchlist`, { headers });
+    const wlData = await wlRes.json();
+    log(`Watchlist: ${wlData.data.watchlist.length} items synced`, 'SUCCESS');
 
   } catch (err) {
-    console.error("❌ Test Failed:", err.message);
+    log(`System Check Failed: ${err.message}`, 'ERROR');
   }
 };
 

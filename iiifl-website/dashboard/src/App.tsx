@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
+import BottomNav from "./components/layout/BottomNav";
+import MobileNav from "./components/layout/MobileNav";
 import LandingLayout from "./components/layout/LandingLayout";
 import AdminSidebar from "./components/admin/AdminSidebar";
 import AssetAllocation from "./components/dashboard/AssetAllocation";
@@ -20,6 +23,7 @@ import Market from "./pages/Market";
 import Funds from "./pages/Funds";
 import Settings from "./pages/Settings";
 import Orders from "./pages/Orders";
+import Options from "./pages/Options";
 import StockDetail from "./pages/StockDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import { FundsPage } from "./pages/PlaceholderPages"; // SettingsPage removed
@@ -28,15 +32,19 @@ import { ThemeProvider } from "./context/ThemeContext";
 
 // 1. Main Layout for User Dashboard
 const DashboardLayout = () => {
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300 overflow-x-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
-        <Header />
-        <main className="p-4 md:p-8 space-y-6 md:space-y-8 flex-1 overflow-y-auto">
+        <Header onMenuClick={() => setIsMobileOpen(true)} />
+        <main className="p-4 md:p-8 space-y-6 md:space-y-8 flex-1 overflow-y-auto pb-20 md:pb-8">
            <Outlet />
         </main>
+        <BottomNav onMenuClick={() => setIsMobileOpen(true)} />
       </div>
+      <MobileNav isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} />
     </div>
   );
 };
@@ -131,6 +139,7 @@ const AppRouter = () => {
         <Route path="orders" element={<Orders />} />
         <Route path="portfolio" element={<Portfolio />} />
         <Route path="market" element={<Market />} />
+        <Route path="options" element={<Options />} />
         <Route path="stock/:symbol" element={<StockDetail />} />
         <Route path="funds" element={<Funds />} />
         <Route path="settings" element={<Settings />} />

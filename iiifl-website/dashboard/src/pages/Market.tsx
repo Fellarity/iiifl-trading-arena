@@ -19,15 +19,18 @@ const Market = () => {
 
   const fetchData = async () => {
     try {
-      const [idxRes, wlRes, movRes] = await Promise.all([
+      const results = await Promise.allSettled([
           api.get('/market/indices'),
           api.get('/market/watchlist'),
           api.get('/market/movers')
       ]);
-      setIndices(idxRes.data.data.indices);
-      setWatchlist(wlRes.data.data.watchlist);
-      setGainers(movRes.data.data.gainers);
-      setLosers(movRes.data.data.losers);
+
+      if (results[0].status === 'fulfilled') setIndices(results[0].value.data.data.indices);
+      if (results[1].status === 'fulfilled') setWatchlist(results[1].value.data.data.watchlist);
+      if (results[2].status === 'fulfilled') {
+          setGainers(results[2].value.data.data.gainers);
+          setLosers(results[2].value.data.data.losers);
+      }
     } catch (err) {
       console.error(err);
     } finally {

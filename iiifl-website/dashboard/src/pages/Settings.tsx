@@ -105,10 +105,61 @@ const Settings = () => {
                        {loading ? "Updating..." : "Update Password"}
                    </Button>
                </form>
+
+               <div className="mt-8 pt-6 border-t">
+                   <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
+                   <TwoFactorSetup />
+               </div>
            </CardContent>
        </Card>
     </div>
   );
+};
+
+const TwoFactorSetup = () => {
+    const [step, setStep] = useState(1); // 1: Start, 2: Scan, 3: Done
+    const [qrCode, setQrCode] = useState("");
+    const [token, setToken] = useState("");
+    
+    const startSetup = async () => {
+        try {
+            const res = await api.post('/auth/2fa/setup');
+            setQrCode(res.data.data.qrCode);
+            setStep(2);
+        } catch (e) { alert("Failed to start setup"); }
+    };
+
+    const verify = async () => {
+        try {
+            await api.post('/auth/2fa/verify', { token });
+            setStep(3);
+        } catch (e) { alert("Invalid Code"); }
+    };
+
+    if (step === 3) return <div className="text-emerald-500 font-bold">✅ 2FA is Enabled</div>;
+
+    return (
+        <div className="space-y-4">
+            {step === 1 && (
+                <Button onClick={startSetup} variant="outline">Enable 2FA (TOTP)</Button>
+            )}
+            {step === 2 && (
+                <div className="space-y-4 border p-4 rounded-md bg-secondary/20">
+                    <p className="text-sm text-muted-foreground">Scan this QR code with Google Authenticator:</p>
+                    <img src={qrCode} alt="2FA QR" className="bg-white p-2 rounded-md" />
+                    <div className="flex gap-2">
+                        <input 
+                            className="bg-background border px-3 py-2 rounded-md w-32 text-center tracking-widest"
+                            placeholder="000000"
+                            value={token}
+                            onChange={e => setToken(e.target.value)}
+                        />
+                        <Button onClick={verify}>Verify & Enable</Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default Settings;

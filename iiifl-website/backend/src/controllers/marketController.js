@@ -222,7 +222,40 @@ exports.removeFromWatchlist = async (req, res, next) => {
 };
 
 exports.getMovers = async (req, res, next) => {
-  // ... (existing getMovers code)
+  try {
+    const symbols = [
+        'RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'HDFCBANK.NS', 'ICICIBANK.NS',
+        'TATAMOTORS.NS', 'SBIN.NS', 'ADANIENT.NS', 'BAJFINANCE.NS', 'ASIANPAINT.NS',
+        'AXISBANK.NS', 'TITAN.NS', 'SUNPHARMA.NS', 'WIPRO.NS', 'ITC.NS',
+        'MARUTI.NS', 'ULTRACEMCO.NS', 'TECHM.NS', 'LT.NS', 'KOTAKBANK.NS'
+    ];
+
+    let data = [];
+    try {
+        const quotes = await yahooFinance.quote(symbols);
+        const quotesArray = Array.isArray(quotes) ? quotes : [quotes];
+        data = quotesArray.map(q => ({
+            symbol: q.symbol.replace('.NS', ''),
+            name: q.shortName || q.symbol,
+            price: q.regularMarketPrice,
+            change: q.regularMarketChange,
+            changePercent: q.regularMarketChangePercent
+        }));
+    } catch (e) {
+        console.error("Movers Yahoo Error:", e.message);
+    }
+
+    // Sort by Change Percent
+    data.sort((a, b) => b.changePercent - a.changePercent);
+
+    const gainers = data.slice(0, 5);
+    const losers = data.slice(-5).reverse(); 
+
+    res.status(200).json({ status: 'success', data: { gainers, losers } });
+  } catch (err) {
+    console.error("Movers Controller Error:", err);
+    res.status(200).json({ status: 'success', data: { gainers: [], losers: [] } });
+  }
 };
 
 exports.getNews = async (req, res, next) => {

@@ -10,6 +10,7 @@ const assetRoutes = require('./routes/assetRoutes');
 const marketRoutes = require('./routes/marketRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const ordersRoutes = require('./routes/ordersRoutes');
+const alertRoutes = require('./routes/alertRoutes');
 // Start Worker (Mocking a separate process behavior)
 require('./workers/marketWorker');
 

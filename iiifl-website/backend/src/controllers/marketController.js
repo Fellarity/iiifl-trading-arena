@@ -20,7 +20,9 @@ const yahooFinance = getYahooInstance();
 exports.getQuote = async (req, res, next) => {
   try {
     let { symbol } = req.params;
-    if (!symbol.toUpperCase().endsWith('.NS')) symbol = `${symbol.toUpperCase()}.NS`;
+    if (!symbol.startsWith('^') && !symbol.toUpperCase().endsWith('.NS')) {
+        symbol = `${symbol.toUpperCase()}.NS`;
+    }
 
     let quote;
     try {
@@ -68,7 +70,9 @@ exports.getHistory = async (req, res, next) => {
     let { symbol } = req.params;
     let { range } = req.query; // 1d, 1w, 1m, 3m
     
-    if (!symbol.toUpperCase().endsWith('.NS')) symbol = `${symbol.toUpperCase()}.NS`;
+    if (!symbol.startsWith('^') && !symbol.toUpperCase().endsWith('.NS')) {
+        symbol = `${symbol.toUpperCase()}.NS`;
+    }
 
     let interval = '1d';
     const startDate = new Date();

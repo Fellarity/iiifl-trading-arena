@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent } from "../components/ui/card";
+import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
 const Options = () => {
-  const [expiry, setExpiry] = useState("20 Jan 2026");
+  const [expiry] = useState("20 Jan 2026");
   
   // Mock Data around ATM 25500
   const strikes = [25300, 25350, 25400, 25450, 25500, 25550, 25600, 25650, 25700];

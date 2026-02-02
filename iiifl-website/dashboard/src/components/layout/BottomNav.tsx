@@ -1,7 +1,7 @@
 import { Home, BarChart3, PieChart, List, Layers } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-const BottomNav = ({ onMenuClick }: { onMenuClick: () => void }) => {
+const BottomNav = () => {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex justify-around items-center px-2 z-40 pb-safe">
       <NavItem to="/dashboard" icon={<Home size={20} />} label="Home" end />

@@ -52,15 +52,17 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4 relative">
-      {/* Top Bar */}
-      <div className="absolute top-6 left-6 cursor-pointer" onClick={() => navigate('/')}>
-        <div className="text-2xl font-bold text-primary tracking-tighter">iiifl</div>
-      </div>
-      <div className="absolute top-4 right-4">
-        <ModeToggle />
+      {/* Top Bar with Safe Area */}
+      <div className="absolute top-0 left-0 right-0 pt-safe px-6 mt-4 flex justify-between z-10">
+        <div className="text-2xl font-bold text-primary tracking-tighter cursor-pointer" onClick={() => navigate('/')}>
+            iiifl
+        </div>
+        <div>
+            <ModeToggle />
+        </div>
       </div>
       
-      <Card className="w-full max-w-md shadow-xl border-border bg-card">
+      <Card className="w-full max-w-md shadow-xl border-border bg-card mt-12">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold text-primary">iiifl</CardTitle>
           <p className="text-sm text-muted-foreground">

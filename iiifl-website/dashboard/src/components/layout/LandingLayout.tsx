@@ -11,7 +11,7 @@ const LandingLayout = () => {
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col">
       {/* Navbar */}
-      <nav className="border-b border-border/40 backdrop-blur-md sticky top-0 w-full z-50">
+      <nav className="border-b border-border/40 backdrop-blur-md sticky top-0 w-full z-50 pt-safe">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="text-2xl font-bold text-primary tracking-tighter cursor-pointer" onClick={() => navigate("/")}>
             iiifl

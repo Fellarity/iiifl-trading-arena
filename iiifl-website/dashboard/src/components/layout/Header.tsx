@@ -1,4 +1,4 @@
-import { Bell, Search, User, Plus, Menu } from 'lucide-react';
+import { Bell, Search, Plus, Menu } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -7,12 +7,14 @@ import { ModeToggle } from '../ui/mode-toggle';
 import { NotificationDropdown } from '../dashboard/Notifications';
 import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
+import MobileNav from './MobileNav';
 
-const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
+const Header = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isTradeOpen, setIsTradeOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -53,11 +55,11 @@ const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
 
   return (
     <>
-      <header className="h-16 border-b bg-card flex items-center justify-between px-4 md:px-10 sticky top-0 z-10 transition-colors duration-300">
+      <header className="h-auto min-h-16 pt-safe border-b bg-card flex items-center justify-between px-4 md:px-10 sticky top-0 z-10 transition-colors duration-300">
         
         {/* Mobile Toggle */}
         <div className="md:hidden flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={onMenuClick}>
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(true)}>
                 <Menu size={24} />
             </Button>
             <div className="font-bold text-lg">iiifl</div>
@@ -132,6 +134,8 @@ const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
         </div>
       </header>
       
+      <MobileNav isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} />
+
       <TradeModal 
         isOpen={isTradeOpen} 
         onClose={() => setIsTradeOpen(false)} 

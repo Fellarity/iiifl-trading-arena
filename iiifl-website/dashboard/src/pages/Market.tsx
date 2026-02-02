@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Search, Trash2, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { Search, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -14,8 +14,8 @@ const Market = () => {
   const [losers, setLosers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Favorites");
+  // const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
@@ -34,7 +34,7 @@ const Market = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -85,18 +85,20 @@ const Market = () => {
       {/* Indices */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {indices.map((idx) => (
-          <Card key={idx.symbol}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{idx.name}</CardTitle>
-              {idx.change >= 0 ? <TrendingUp className="text-emerald-500" /> : <TrendingDown className="text-red-500" />}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{idx.price.toLocaleString()}</div>
-              <p className={`text-xs ${idx.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                {idx.change > 0 ? "+" : ""}{idx.change.toFixed(2)} ({idx.changePercent.toFixed(2)}%)
-              </p>
-            </CardContent>
-          </Card>
+          <div key={idx.symbol} onClick={() => navigate(`/dashboard/stock/${idx.symbol}`)} className="cursor-pointer transition-transform hover:scale-[1.02]">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{idx.name}</CardTitle>
+                {idx.change >= 0 ? <TrendingUp className="text-emerald-500" /> : <TrendingDown className="text-red-500" />}
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">₹{idx.price.toLocaleString()}</div>
+                <p className={`text-xs ${idx.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                    {idx.change > 0 ? "+" : ""}{idx.change.toFixed(2)} ({idx.changePercent.toFixed(2)}%)
+                </p>
+                </CardContent>
+            </Card>
+          </div>
         ))}
       </div>
 

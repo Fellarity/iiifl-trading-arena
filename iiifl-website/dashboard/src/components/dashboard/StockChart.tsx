@@ -1,110 +1,15 @@
-import { useEffect, useState } from 'react';
-import Chart from 'react-apexcharts';
+import { useEffect, useRef, useState } from 'react';
+import { createChart, ColorType, CrosshairMode } from 'lightweight-charts';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
 import api from '../../lib/api';
 import { useTheme } from '../../context/ThemeContext';
-import { calculateSMA, calculateEMA } from '../../lib/indicators';
-import { Settings2 } from 'lucide-react';
 
 const StockChart = ({ symbol }: { symbol: string }) => {
-  const [rawData, setRawData] = useState<any[]>([]);
-  const [series, setSeries] = useState<any[]>([]);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<any>(null);
+  const seriesRef = useRef<any>(null);
   const [range, setRange] = useState('3m');
-  const [indicators, setIndicators] = useState<string[]>([]);
   const { theme } = useTheme();
-
-  useEffect(() => {
-    if (!symbol) return;
-    
-    // Fetch with selected range
-    api.get(`/market/history/${symbol}?range=${range}`)
-       .then(res => {
-           const raw = res.data.data.candles;
-           if (!raw || raw.length === 0) {
-               setRawData([]);
-               return;
-           }
-           // Format: [timestamp, open, high, low, close]
-           const data = raw.map((d: any) => ({
-               x: new Date(d.time),
-               y: [d.open, d.high, d.low, d.close]
-           }));
-           setRawData(data);
-       })
-       .catch(console.error);
-  }, [symbol, range]);
-
-  // Recalculate series when rawData or indicators change
-  useEffect(() => {
-      if (rawData.length === 0) {
-          setSeries([]);
-          return;
-      }
-
-      let chartSeries: any[] = [{ name: 'Price', type: 'candlestick', data: rawData }];
-
-      if (indicators.includes('SMA20')) {
-          chartSeries.push({ name: 'SMA 20', type: 'line', data: calculateSMA(rawData, 20) });
-      }
-      if (indicators.includes('EMA50')) {
-          chartSeries.push({ name: 'EMA 50', type: 'line', data: calculateEMA(rawData, 50) });
-      }
-
-      setSeries(chartSeries);
-  }, [rawData, indicators]);
-
-  const toggleIndicator = (ind: string) => {
-      setIndicators(prev => prev.includes(ind) ? prev.filter(i => i !== ind) : [...prev, ind]);
-  };
-
-  const options: any = {
-    chart: {
-      type: 'candlestick', // Default, but overridden by series type
-      height: 300,
-      background: 'transparent',
-      toolbar: { show: false },
-      zoom: { enabled: true }
-    },
-    theme: {
-        mode: theme === 'dark' ? 'dark' : 'light'
-    },
-    stroke: {
-        width: [1, 2, 2], // Candle border, Line 1, Line 2
-        curve: 'smooth'
-    },
-    xaxis: {
-      type: 'datetime',
-      labels: {
-         datetimeFormatter: {
-            year: 'yyyy',
-            month: "MMM 'yy",
-            day: 'dd MMM',
-            hour: 'HH:mm'
-         }
-      }
-    },
-    yaxis: {
-      tooltip: { enabled: true },
-      opposite: true 
-    },
-    grid: {
-        borderColor: theme === 'dark' ? '#374151' : '#e5e7eb',
-        xaxis: { lines: { show: false } }
-    },
-    plotOptions: {
-        candlestick: {
-            colors: {
-                upward: '#10b981',
-                downward: '#ef4444'
-            }
-        }
-    },
-    legend: {
-        position: 'top',
-        horizontalAlign: 'left'
-    }
-  };
 
   const ranges = [
       { label: '1D', value: '1d' },
@@ -113,35 +18,118 @@ const StockChart = ({ symbol }: { symbol: string }) => {
       { label: '3M', value: '3m' },
   ];
 
+  // 1. Initialize Chart
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: theme === 'dark' ? '#D9D9D9' : '#333',
+      },
+      grid: {
+        vertLines: { color: theme === 'dark' ? 'rgba(42, 46, 57, 0.5)' : '#e1e1e1' },
+        horzLines: { color: theme === 'dark' ? 'rgba(42, 46, 57, 0.5)' : '#e1e1e1' },
+      },
+      width: chartContainerRef.current.clientWidth,
+      height: 300,
+      crosshair: {
+          mode: CrosshairMode.Normal,
+      },
+      rightPriceScale: {
+          borderColor: theme === 'dark' ? 'rgba(197, 203, 206, 0.8)' : 'rgba(197, 203, 206, 1)',
+      },
+      timeScale: {
+          borderColor: theme === 'dark' ? 'rgba(197, 203, 206, 0.8)' : 'rgba(197, 203, 206, 1)',
+      },
+      // Mobile Optimization
+      handleScale: {
+          axisPressedMouseMove: true,
+      },
+      handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+      },
+    });
+
+    const candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#26a69a', 
+        downColor: '#ef5350', 
+        borderVisible: false, 
+        wickUpColor: '#26a69a', 
+        wickDownColor: '#ef5350' 
+    });
+
+    chartRef.current = chart;
+    seriesRef.current = candlestickSeries;
+
+    // Responsive Resize
+    const handleResize = () => {
+        if (chartContainerRef.current) {
+            chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+        }
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+        window.removeEventListener('resize', handleResize);
+        chart.remove();
+    };
+  }, [theme]);
+
+  // 2. Fetch Data
+  useEffect(() => {
+    if (!symbol || !seriesRef.current) return;
+
+    const fetchData = async () => {
+        try {
+            const res = await api.get(`/market/history/${symbol}?range=${range}`);
+            const raw = res.data.data.candles;
+            if (!raw || raw.length === 0) return;
+
+            // Format for Lightweight Charts: { time: 'yyyy-mm-dd', open, high, low, close }
+            // Note: time needs to be string 'YYYY-MM-DD' or timestamp (seconds)
+            const data = raw.map((d: any) => ({
+                time: new Date(d.time).getTime() / 1000 + 19800, // Adjust timezone if needed or just use timestamp
+                // Using raw timestamp is safest. 
+                // Yahoo returns date string. '2023-01-01'.
+                // If range is 1d/1w, we might get intraday time?
+                // Backend 'getHistory' returns 'd.date' which is ISO string.
+                // For daily, just YYYY-MM-DD string is best. For intraday, timestamp (seconds).
+                open: d.open,
+                high: d.high,
+                low: d.low,
+                close: d.close
+            }));
+            
+            // Sort by time just in case
+            data.sort((a: any, b: any) => a.time - b.time);
+
+            // De-duplicate times (Lightweight charts crashes on duplicate times)
+            const uniqueData = [];
+            let lastTime = null;
+            for (const item of data) {
+                if (item.time !== lastTime) {
+                    uniqueData.push(item);
+                    lastTime = item.time;
+                }
+            }
+
+            seriesRef.current.setData(uniqueData);
+            chartRef.current?.timeScale().fitContent();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    fetchData();
+  }, [symbol, range]);
+
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-2">
-        <div className="flex items-center gap-2">
-            <CardTitle className="text-base md:text-lg">{symbol}</CardTitle>
-            
-            {/* Indicators Toggle */}
-            <div className="flex gap-1 ml-2">
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className={`h-6 text-[10px] px-2 ${indicators.includes('SMA20') ? 'bg-primary/20 border-primary' : ''}`}
-                    onClick={() => toggleIndicator('SMA20')}
-                >
-                    SMA 20
-                </Button>
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className={`h-6 text-[10px] px-2 ${indicators.includes('EMA50') ? 'bg-primary/20 border-primary' : ''}`}
-                    onClick={() => toggleIndicator('EMA50')}
-                >
-                    EMA 50
-                </Button>
-            </div>
-        </div>
-        
-        {/* Ranges */}
-        <div className="flex bg-secondary/50 rounded-lg p-1 gap-1 self-start md:self-auto">
+      <CardHeader className="flex flex-row items-center justify-between py-4">
+        <CardTitle className="text-base md:text-lg">{symbol}</CardTitle>
+        <div className="flex bg-secondary/50 rounded-lg p-1 gap-1">
             {ranges.map(r => (
                 <button
                     key={r.value}
@@ -157,21 +145,8 @@ const StockChart = ({ symbol }: { symbol: string }) => {
             ))}
         </div>
       </CardHeader>
-      
-      <CardContent className="p-0 flex-1 min-h-[300px]">
-        {series.length > 0 ? (
-            <Chart 
-                options={options} 
-                series={series} 
-                type="candlestick" 
-                height="100%" 
-                width="100%"
-            />
-        ) : (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-                {series.length === 0 ? "Loading Chart..." : "No Data"}
-            </div>
-        )}
+      <CardContent className="p-0 flex-1 min-h-[300px] relative">
+         <div ref={chartContainerRef} className="absolute inset-0" />
       </CardContent>
     </Card>
   );

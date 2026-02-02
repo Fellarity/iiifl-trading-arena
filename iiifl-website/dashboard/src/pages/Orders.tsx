@@ -8,7 +8,7 @@ import api from "../lib/api";
 const Orders = () => {
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   const [executedOrders, setExecutedOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
       try {
@@ -18,7 +18,9 @@ const Orders = () => {
           ]);
           setOpenOrders(openRes.data.data.orders);
           setExecutedOrders(execRes.data.data.orders);
-      } catch (e) { console.error(e); } finally { setLoading(false); }
+      } catch (e) { console.error(e); } finally { 
+          // setLoading(false); 
+      }
   };
 
   useEffect(() => {

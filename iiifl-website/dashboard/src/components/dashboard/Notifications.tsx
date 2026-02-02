@@ -1,9 +1,9 @@
-import { Bell, Check } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import api from "../../lib/api";
 
-export const NotificationDropdown = ({ onClose, onRead }: { onClose: () => void, onRead?: () => void }) => {
+export const NotificationDropdown = ({ onClose: _onClose, onRead }: { onClose: () => void, onRead?: () => void }) => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -36,7 +36,8 @@ const RecentTransactions = () => {
         <CardTitle>Recent Transactions</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-muted-foreground border-b">
               <tr>
@@ -71,6 +72,39 @@ const RecentTransactions = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile List */}
+        <div className="md:hidden space-y-3">
+            {transactions.map((txn) => (
+                <div key={txn.id} className="border rounded-lg p-3 bg-secondary/10 flex flex-col gap-2">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <div className="font-bold text-sm">{txn.stock}</div>
+                            <div className="text-xs text-muted-foreground">{new Date(txn.date).toLocaleDateString()}</div>
+                        </div>
+                        <Badge variant={txn.type === 'BUY' ? 'secondary' : 'destructive'} className="text-[10px]">
+                            {txn.type}
+                        </Badge>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <div className="flex gap-3">
+                            <div>
+                                <span className="text-xs text-muted-foreground block">Qty</span>
+                                <span>{txn.qty}</span>
+                            </div>
+                            <div>
+                                <span className="text-xs text-muted-foreground block">Price</span>
+                                <span>₹{Number(txn.price).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-xs text-muted-foreground block">Total</span>
+                            <span className="font-bold">₹{(Number(txn.qty) * Number(txn.price)).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            ))}
         </div>
       </CardContent>
     </Card>

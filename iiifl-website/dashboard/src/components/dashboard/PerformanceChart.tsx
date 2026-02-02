@@ -47,7 +47,7 @@ const PerformanceChart = () => {
                 <Tooltip 
                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                   formatter={(value: number) => [`₹${value.toLocaleString()}`, "Value"]}
+                   formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Value"]}
                 />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <Area 

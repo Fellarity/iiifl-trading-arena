@@ -28,8 +28,11 @@ if (process.env.NODE_ENV === 'development') {
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
 
-// Enable CORS
-app.use(cors());
+// Enable CORS with specific origins for mobile
+app.use(cors({
+  origin: ['capacitor://localhost', 'http://localhost', 'http://192.168.1.17:3000', 'http://192.168.1.17:5000'],
+  credentials: true
+}));
 
 // 2) Routes
 app.use('/api/auth', authRoutes);

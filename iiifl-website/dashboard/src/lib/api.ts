@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Use computer's IP for mobile testing
 const api = axios.create({
-  baseURL: 'http://192.168.1.17:5000/api', 
+  baseURL: 'http://192.168.1.8:5000/api', 
   headers: {
     'Content-Type': 'application/json',
   },

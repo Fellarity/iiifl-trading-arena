@@ -98,6 +98,23 @@ exports.getPortfolio = async (req, res, next) => {
     }
 
     const cashBalance = Number(walletRes.rows[0]?.balance || 0);
+    const totalValue = currentPortfolioValue + cashBalance;
+
+    // Snapshot Logic
+    const lastSnapRes = await db.query(
+        `SELECT created_at FROM portfolio_snapshots WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [req.user.id]
+    );
+    const lastSnap = lastSnapRes.rows[0];
+    const now = new Date();
+    
+    if (!lastSnap || (now - new Date(lastSnap.created_at)) > 3600000) {
+        await db.query(
+            `INSERT INTO portfolio_snapshots (user_id, total_equity_value, cash_balance, total_portfolio_value, snapshot_date)
+             VALUES ($1, $2, $3, $4, NOW())`,
+            [req.user.id, currentPortfolioValue, cashBalance, totalValue]
+        );
+    }
 
     const portfolio = {
       cash: walletRes.rows[0] || { balance: 0, currency: 'INR' },
@@ -105,7 +122,7 @@ exports.getPortfolio = async (req, res, next) => {
       summary: {
           total_invested: totalInvested,
           current_value: currentPortfolioValue,
-          total_portfolio_value: currentPortfolioValue + cashBalance,
+          total_portfolio_value: totalValue,
           day_gain: 0 // TODO: Calculate if we had previous close
       }
     };
@@ -312,22 +329,32 @@ exports.getTransactions = async (req, res, next) => {
 };
 
 exports.getPerformance = async (req, res, next) => {
-  // Mocking performance data for the chart
-  // In a real app, this would query the 'portfolio_snapshots' table
-  const mockData = [
-    { name: "Jan", value: 10000 },
-    { name: "Feb", value: 12500 },
-    { name: "Mar", value: 11000 },
-    { name: "Apr", value: 14000 },
-    { name: "May", value: 13500 },
-    { name: "Jun", value: 16000 },
-    { name: "Jul", value: 18500 },
-  ];
-  
-  res.status(200).json({
-    status: 'success',
-    data: { chart: mockData },
-  });
+  try {
+      const result = await db.query(
+          `SELECT total_portfolio_value as value, created_at as date 
+           FROM portfolio_snapshots 
+           WHERE user_id = $1 
+           ORDER BY created_at ASC`,
+          [req.user.id]
+      );
+
+      let chartData = result.rows.map(r => ({
+          name: new Date(r.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric' }),
+          value: Number(r.value)
+      }));
+
+      if (chartData.length === 0) {
+          const walletRes = await db.query('SELECT balance FROM wallets WHERE user_id = $1', [req.user.id]);
+          chartData = [{ name: 'Now', value: Number(walletRes.rows[0]?.balance || 0) }];
+      }
+
+      res.status(200).json({
+        status: 'success',
+        data: { chart: chartData },
+      });
+  } catch (err) {
+      next(err);
+  }
 };
 
 exports.searchAssets = async (req, res, next) => {

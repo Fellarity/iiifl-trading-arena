@@ -8,6 +8,7 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#64748b", "#8b5cf6", "#ec4899"
 const AssetAllocation = () => {
   const [data, setData] = useState<any[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [equityPercent, setEquityPercent] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -17,12 +18,13 @@ const AssetAllocation = () => {
       
       const totalEquity = holdings.reduce((acc: number, curr: any) => acc + Number(curr.total_value), 0);
       const total = totalEquity + cash;
+      setEquityPercent(Math.round((totalEquity / (total || 1)) * 100));
 
       const chartData = [
-        { name: "Cash", value: Math.round((cash / (total || 1)) * 100) },
+        { name: "Cash", value: Number(((cash / (total || 1)) * 100).toFixed(1)) },
         ...holdings.map((h: any) => ({
           name: h.symbol,
-          value: Math.round((Number(h.total_value) / (total || 1)) * 100)
+          value: Number(((Number(h.total_value) / (total || 1)) * 100).toFixed(1))
         }))
       ];
       
@@ -58,22 +60,23 @@ const AssetAllocation = () => {
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  formatter={(value: any) => [`${value}%`, "Allocation"]}
                 />
               </PieChart>
             </ResponsiveContainer>
           )}
           
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-            <span className="text-2xl font-bold">100%</span>
-            <p className="text-xs text-muted-foreground">Diversified</p>
+            <span className="text-3xl font-bold">{equityPercent}%</span>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Equity</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mt-4">
+        <div className="grid grid-cols-2 gap-2 mt-4 max-h-40 overflow-y-auto">
           {data.map((item, index) => (
             <div key={item.name} className="flex items-center gap-2 text-sm">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-              <span className="text-muted-foreground">{item.name}</span>
+              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+              <span className="text-muted-foreground truncate">{item.name}</span>
               <span className="ml-auto font-bold">{item.value}%</span>
             </div>
           ))}

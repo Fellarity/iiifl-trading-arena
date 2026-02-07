@@ -11,6 +11,7 @@ const marketRoutes = require('./routes/marketRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const ordersRoutes = require('./routes/ordersRoutes');
 const alertRoutes = require('./routes/alertRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 // Start Worker (Mocking a separate process behavior)
 require('./workers/marketWorker');
 
@@ -30,7 +31,7 @@ app.use(express.json({ limit: '10kb' }));
 
 // Enable CORS with specific origins for mobile
 app.use(cors({
-  origin: ['capacitor://localhost', 'http://localhost', 'http://192.168.1.17:3000', 'http://192.168.1.17:5000'],
+  origin: ['capacitor://localhost', 'http://localhost', 'http://192.168.1.8:3000', 'http://192.168.1.8:5000'],
   credentials: true
 }));
 
@@ -43,6 +44,7 @@ app.use('/api/market', marketRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // 3) Unhandled Routes
 app.all('*', (req, res, next) => {

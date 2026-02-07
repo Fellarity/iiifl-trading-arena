@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
@@ -10,23 +11,31 @@ import PortfolioSummary from "./components/dashboard/PortfolioSummary";
 import RecentTransactions from "./components/dashboard/RecentTransactions";
 import Positions from "./components/dashboard/Positions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Landing from "./pages/Landing";
-import Products from "./pages/landing/Products";
-import Pricing from "./pages/landing/Pricing";
-import Learn from "./pages/landing/Learn";
-import Portfolio from "./pages/Portfolio";
-import Market from "./pages/Market";
-import Funds from "./pages/Funds";
-import Settings from "./pages/Settings";
-import Orders from "./pages/Orders";
-import Options from "./pages/Options";
-import StockDetail from "./pages/StockDetail";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-// import { FundsPage } from "./pages/PlaceholderPages"; // SettingsPage removed
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+
+// Lazy Load Pages
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Landing = lazy(() => import("./pages/Landing"));
+const Products = lazy(() => import("./pages/landing/Products"));
+const Pricing = lazy(() => import("./pages/landing/Pricing"));
+const Learn = lazy(() => import("./pages/landing/Learn"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Market = lazy(() => import("./pages/Market"));
+const Funds = lazy(() => import("./pages/Funds"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Options = lazy(() => import("./pages/Options"));
+const StockDetail = lazy(() => import("./pages/StockDetail"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+
+// Loading Component
+const Loading = () => (
+  <div className="flex items-center justify-center h-full min-h-[50vh] text-muted-foreground">
+    Loading...
+  </div>
+);
 
 // 1. Main Layout for User Dashboard
 const DashboardLayout = () => {
@@ -36,7 +45,9 @@ const DashboardLayout = () => {
       <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
         <Header />
         <main className="p-4 md:p-8 space-y-6 md:space-y-8 flex-1 overflow-y-auto pb-20 md:pb-8">
-           <Outlet />
+           <Suspense fallback={<Loading />}>
+             <Outlet />
+           </Suspense>
         </main>
         <BottomNav />
       </div>
@@ -110,39 +121,42 @@ const AppRouter = () => {
   const { isAuthenticated, isAdmin } = useAuth();
 
   return (
-    <Routes>
-      {/* Public Routes with Landing Layout */}
-      <Route element={<LandingLayout />}>
-        <Route path="/" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Landing />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/learn" element={<Learn />} />
-      </Route>
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        {/* Public Routes with Landing Layout */}
+        <Route element={<LandingLayout />}>
+          <Route path="/" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Landing />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/learn" element={<Learn />} />
+        </Route>
 
-      <Route path="/login" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Login />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Register />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Login />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace /> : <Register />} />
 
-      {/* Admin Routes */}
-      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Route>
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Route>
 
-      {/* User Routes */}
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route index element={<DashboardHome />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="portfolio" element={<Portfolio />} />
-        <Route path="market" element={<Market />} />
-        <Route path="options" element={<Options />} />
-        <Route path="stock/:symbol" element={<StockDetail />} />
-        <Route path="funds" element={<Funds />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Route>
-    </Routes>
+        {/* User Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route index element={<DashboardHome />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="portfolio" element={<Portfolio />} />
+          <Route path="market" element={<Market />} />
+          <Route path="options" element={<Options />} />
+          <Route path="stock/:symbol" element={<StockDetail />} />
+          <Route path="funds" element={<Funds />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 };
+
 
 function App() {
   return (

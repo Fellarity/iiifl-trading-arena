@@ -18,6 +18,9 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
+    "qrcode": "^1.5.4",
+    "razorpay": "^2.9.6",
+    "speakeasy": "^2.0.0",
     "yahoo-finance2": "^3.11.2"
   },
   "devDependencies": {
